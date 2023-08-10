@@ -21,10 +21,10 @@ BASE_TEMPLATE = """
         },
         {
             "type": "task",
-            "task_type": "keyboard",
+            "task_type": "write",
             "task_data":{
-                "time_delay": 2,
-                "keys": ["ctrl", "shift", ["A", "B"]]
+                "interval": 0.2,
+                "text": "Hello World!"
             }
         }
     ]
