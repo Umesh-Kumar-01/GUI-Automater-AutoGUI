@@ -23,7 +23,6 @@ class Terminal:
         self.text_widget.see(tk.END)
 
 
-
 class BaseApp:
     def __init__(self, title):
         self.root = tk.Tk()
@@ -38,7 +37,7 @@ class BaseApp:
         self.add_menu_labels(master=self.menuBar, label_map={
             'File': {
                 'New': self.donothing,
-                'Open': self.donothing,
+                'Open': self.open_new_file,
                 'Save': self.donothing,
                 'Save as': self.donothing,
                 'Close': self.donothing,
@@ -67,51 +66,82 @@ class BaseApp:
         self.notebook.bind("<Button-1>", self.on_tab_button_click)
 
         ## Add Terminal
-        self.terminal = Terminal(tk.Text(self.terminalPanel,wrap=tk.WORD, state=tk.DISABLED))
+        self.terminal = Terminal(tk.Text(self.terminalPanel, wrap=tk.WORD, state=tk.DISABLED))
         self.terminal.write("Welcome To GUI Automation!", "INFO")
 
         ## Add List of files in folder
         if self.currentDir is None:
-            self.open_label = ttk.Button(self.filePanel, text="Open Folder",command=self.open_folder)
+            self.open_label = ttk.Button(self.filePanel, text="Open Folder", command=self.open_folder)
             self.open_label.pack(fill=tk.BOTH, expand=True)
 
-
+    def on_select(self,event):
+        print("Event Triggered!")
+        w = event.widget
+        index = int(w.curselect()[0])
+        value = w.get(index)
+        print(w,index,value)
+        self.open_file(value)
 
     def open_folder(self):
         folder_path = filedialog.askdirectory()
         if folder_path:
             self.currentDir = folder_path
-            self.terminal.write(f"Opened folder {folder_path}","INFO")
+            self.terminal.write(f"Opened folder {folder_path}", "INFO")
             files = os.listdir(folder_path)
             workflow_files = [file for file in files if file.endswith('.wkfw')]
 
             self.updateFileList(workflow_files)
 
-    def updateFileList(self,files):
+    def updateFileList(self, files):
         self.currentFiles.update(files)
         list_items = tk.Variable(value=tuple(self.currentFiles))
-        if self.open_label.winfo_ismapped():
-            self.open_label.pack_forget()
-            self.listFileWidget = tk.Listbox(self.filePanel,listvariable=list_items)
-            self.listFileWidget.pack(expand=True, fill = tk.BOTH)
+        if hasattr(self,'listFileWidget'):
+            self.listFileWidget.destroy()
         else:
-            self.listFileWidget.config(listvariable=list_items)
+            self.open_label.pack_forget()
+        self.listFileWidget = tk.Listbox(self.filePanel, listvariable=list_items)
+        self.listFileWidget.pack(expand=True, fill=tk.BOTH)
 
-    def open_file(self,file_name):
+        self.listFileWidget.bind('<ButtonRelease-1>', self.select_open_file)
+
+
+    def select_open_file(self, event):
+        selected_index = self.listFileWidget.curselection()
+        if selected_index:
+            index = selected_index[0]
+            file_name = self.listFileWidget.get(index)
+            # print(file_name)
+            self.open_file(file=file_name)
+
+
+    def open_new_file(self):
+        file_path = filedialog.askopenfilename(defaultextension=".wkfw")
+        if file_path.endswith(".wkfw"):
+            self.open_file(file_path,False)
+        # print(file_path)
+
+    def open_file(self, file, add_currentDir=True):
+        if add_currentDir and self.currentDir:
+            path = pathlib.Path(self.currentDir).joinpath(file)
+            file_name = file
+        elif not add_currentDir:
+            path = file
+            file_name = file.split('/')[-1]
+        else:
+            self.terminal.write("Give the full path","ERROR")
+
         if file_name in self.tabs:
-            self.notebook.select(file_name)
-            return None
+            self.notebook.select(self.tabs.index(file_name))
+
         else:
             try:
-                path = pathlib.Path.joinpath(self.currentDir,file_name)
                 data = import_wkfw_file(path)
                 self.add_notebook_tabs(tabs=[file_name])
-                self.tabs.extend([file_name])
                 process_data(data)
+                self.currentFiles.add(file_name)
 
             except Exception as e:
-                self.terminal.write(f"Not Able to open file, getting {e}","ERROR")
-
+                self.terminal.write(f"Not Able to open file, getting {e}", "ERROR")
 
     def create_layout(self):
         # Panned window
@@ -135,9 +165,13 @@ class BaseApp:
 
     def add_notebook_tabs(self, tabs):
         for tab in tabs:
+            print(tab)
             tab1 = ttk.Frame(self.notebook)
-            self.notebook.add(tab1, text=tab)
-            self.tabs.extend(tab)
+            # self.notebook.add(tab1, text=tab)
+            self.notebook.insert(self.notebook.index("end")-1,tab1,text=tab)
+            self.tabs.append(tab)
+            self.notebook.select(self.tabs.index(tab))
+
 
     def on_tab_button_click(self, event):
         # print(event.x,event.y)
@@ -161,10 +195,13 @@ class BaseApp:
                             self.updateFileList([os.path.split(file_path)[1]])
 
                     except Exception as e:
-                        print(e)
+                        self.terminal.write(f"{e}","ERROR")
+
                     if os.path.split(file_path)[1] not in self.currentFiles:
                         new_tab = ttk.Frame(self.notebook)
                         self.notebook.insert(tab_id, new_tab, text=os.path.split(file_path)[1])
+                        self.tabs.insert(os.path.split(file_path)[1],tab_id)
+
                 except Exception as e:
                     self.terminal.write(f"{e}", "ERROR")
 
