@@ -12,31 +12,33 @@ from runner import *
 
 class TaskCell:
     def __init__(self, parent):
-        self.frame = ttk.Frame(parent, borderwidth=1)
-        self.frame.grid(row=0, column=0)
+        self.frame = ttk.Frame(parent)
+        self.frame.grid(row=0, column=0, sticky="nsew")
 
+        self.task_label = ttk.Label(self.frame,text="@Task Cell")
+        self.task_label.grid(row=0, column=0, sticky="ew")
         self.start_after_label = ttk.Label(self.frame, text="Start Task After (in seconds)", justify="left")
-        self.start_after_label.grid(row=0, column=0)
+        self.start_after_label.grid(row=1, column=0, columnspan=2,sticky="w")
         self.start_after_input = ttk.Entry(self.frame)
         self.start_after_input.insert(0, "0")
-        self.start_after_input.grid(row=0, column=1)
+        self.start_after_input.grid(row=1, column=2,columnspan=2,sticky="w")
 
         self.task_types = list(TASKS.keys())
 
         self.label = ttk.Label(self.frame, text="Select Task Type", justify="left")
-        self.label.grid(row=1, column=0)
+        self.label.grid(row=2, column=0,columnspan=2,sticky="w")
         self.task_type_var = tk.StringVar()
         self.task_type_combobox = ttk.Combobox(self.frame, textvariable=self.task_type_var, values=self.task_types)
-        self.task_type_combobox.grid(row=1, column=1)
+        self.task_type_combobox.grid(row=2, column=2,columnspan=1,sticky="w")
         self.select_button = ttk.Button(self.frame, text="Select Task Type", command=self.show_selected_task)
-        self.select_button.grid(row=2, column=0)
+        self.select_button.grid(row=2, column=4,columnspan=2,sticky="w")
         self.addButton = ttk.Button(self.frame, text="Add New Arguments", command=self.add_new_arg)
-        self.addButton.grid(row=2, column=1)
+        self.addButton.grid(row=3, column=0,columnspan=2,sticky="w")
 
         self.labels = []
 
     def add_new_arg(self):
-        self.create_key_value_label("arg", "", len(self.labels) + 3, False)
+        self.create_key_value_label("arg", "", len(self.labels) + 4, False)
 
     def show_selected_task(self):
         selected_task_type = self.task_type_var.get()
@@ -47,7 +49,7 @@ class TaskCell:
                 self.labels.clear()
 
             for args in TASKS[selected_task_type]:
-                self.create_key_value_label(args, "", len(self.labels) + 3)
+                self.create_key_value_label(args, "", len(self.labels) + 4)
         else:
             print("No Task Type Selected!")
 
@@ -63,10 +65,11 @@ class TaskCell:
 
 
 class CustomTextCell:
-    def __init__(self, parent_frame, text, index):
+    def __init__(self, parent_frame, text, index, parent_object):
         self._index = index
+        self.parent_obj = parent_object
         self.frame = ttk.Frame(parent_frame, borderwidth=1)
-        self.frame.grid(row=index, column=0)
+        self.frame.grid(row=index, column=0, pady=10)
 
         self.index_label = ttk.Label(self.frame, text=str(self._index), width=4)
         self.index_label.grid(row=0, column=0)
@@ -82,9 +85,6 @@ class CustomTextCell:
         self.move_down_button = ttk.Button(self.frame, text="Move Down", command=self.move_down)
         self.move_down_button.grid(row=1, column=6)
 
-        # self.run_button = ttk.Button(self.frame, text="Compile", command=self.compile)
-        # self.run_button.grid(row=1, column=7)
-
     @property
     def index(self):
         return self._index
@@ -96,14 +96,14 @@ class CustomTextCell:
 
     def move_up(self):
         if self._index > 0:
-            w1 = FileFrame.cells[self._index - 1]
-            w2 = FileFrame.cells[self._index]
+            w1 = self.parent_obj.cells[self._index - 1]
+            w2 = self.parent_obj.cells[self._index]
             FileFrame.swap_widgets(w1, w2)
 
     def move_down(self):
-        if self._index < len(FileFrame.cells) - 1:
-            w1 = FileFrame.cells[self._index]
-            w2 = FileFrame.cells[self._index + 1]
+        if self._index < len(self.parent_obj.cells) - 1:
+            w1 = self.parent_obj.cells[self._index]
+            w2 = self.parent_obj.cells[self._index + 1]
             FileFrame.swap_widgets(w1, w2)
 
     def compile(self):
@@ -132,34 +132,64 @@ class CustomTextCell:
 
 
 class FileFrame:
-    cells = []
 
     def __init__(self, parent, file_path, file_name):
         self.file_path = file_path
         self.file_name = file_name
+        self.cells = []
         try:
             self.data = import_wkfw_file(file_path=file_path)
         except Exception as e:
             print("File is not able to Load!")
 
-        self.frame = ttk.Frame(parent)
-        self.frame.pack(fill=tk.BOTH, expand=True)
-
         self.add_cell_button = ttk.Button(parent, text="Add Cell", command=self.add_cell)
-        self.add_cell_button.pack()
+        self.add_cell_button.grid(row=0,column=1)
 
         self.runButton = ttk.Button(parent, text="Run All", command=self.run)
-        self.runButton.pack()
+        self.runButton.grid(row=0,column=2)
 
         self.saveButton = ttk.Button(parent, text="Save", command=self.save_file)
-        self.saveButton.pack()
+        self.saveButton.grid(row=0,column=3)
+
+        self.frame = tk.Frame(parent)
+        self.frame.grid(row=1,column=0,columnspan=4,sticky="ew")
+        self.frame.grid_columnconfigure(0, weight=1)
+        self.frame.grid_rowconfigure(0, weight=1)
+        parent.grid_columnconfigure(0, weight=1)
+
+        self.canvas = tk.Canvas(self.frame)
+        self.canvas.pack(side="left", fill="both", expand=True)
+
+        self.scrollable_frame = ttk.Frame(self.canvas)
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+
+        self.scrollbar = ttk.Scrollbar(self.frame,orient="vertical",command=self.canvas.yview)
+        self.canvas.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.pack(side="right", fill="y")
 
         self.load_data()
+        self.canvas.bind("<Configure>", self.configure_canvas_scroll)
+        self.scrollable_frame.bind("<Enter>", self.bind_canvas_scroll)
+        self.scrollable_frame.bind("<Leave>", self.unbind_canvas_scroll)
+
+    def configure_canvas_scroll(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def bind_canvas_scroll(self, event):
+        self.canvas.bind_all("<MouseWheel>", self.on_canvas_scroll)
+
+    def unbind_canvas_scroll(self, event):
+        self.canvas.unbind_all("<MouseWheel>")
+
+    def on_canvas_scroll(self, event):
+        self.canvas.yview_scroll(-1 * int(event.delta / 120), "units")
 
     def add_cell(self):
-        index = len(FileFrame.cells)
-        cell = CustomTextCell(self.frame, text=f"Cell {index}", index=index)
-        FileFrame.cells.append(cell)
+        index = len(self.cells)
+        cell = CustomTextCell(self.scrollable_frame, text=f"Cell {index}", index=index, parent_object=self)
+        self.cells.append(cell)
+        self.configure_canvas_scroll(None)
+        self.canvas.yview_moveto(1.0)
 
     def swap_widgets(w1, w2):
         row1, col1 = w1.frame.grid_info()["row"], w1.frame.grid_info()["column"]
@@ -178,22 +208,22 @@ class FileFrame:
     def load_data(self):
         for cell in self.data["cells"]:
             self.add_cell()
-            FileFrame.cells[-1].task.start_after_input.delete(0, tk.END)
-            FileFrame.cells[-1].task.start_after_input.insert(0, cell["task_data"]["start_time"])
+            self.cells[-1].task.start_after_input.delete(0, tk.END)
+            self.cells[-1].task.start_after_input.insert(0, cell["task_data"]["start_time"])
 
-            FileFrame.cells[-1].task.task_type_var.set(cell["task_type"])
+            self.cells[-1].task.task_type_var.set(cell["task_type"])
             for key, value in cell["task_data"].items():
                 if key == "start_time":
                     continue
                 if key in TASKS[cell["task_type"]]:
-                    FileFrame.cells[-1].task.create_key_value_label(key, str(value),
-                                                                    len(FileFrame.cells[-1].task.labels) + 3)
+                    self.cells[-1].task.create_key_value_label(key, str(value),
+                                                                    len(self.cells[-1].task.labels) + 4)
                 else:
-                    FileFrame.cells[-1].task.create_key_value_label(key, str(value),
-                                                                    len(FileFrame.cells[-1].task.labels) + 3, False)
+                    self.cells[-1].task.create_key_value_label(key, str(value),
+                                                                    len(self.cells[-1].task.labels) + 4, False)
 
     def compile_all(self):
-        for cell in FileFrame.cells:
+        for cell in self.cells:
             m1 = cell.compile()
             if cell.index < len(self.data["cells"]):
                 self.data["cells"][cell.index] = m1
