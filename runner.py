@@ -1,6 +1,16 @@
+import pyautogui
 import pyautogui as pg
 import time
 
+
+TASKS = {
+    "write": ["interval","text"],
+    "hotkey": ["keys"],
+    "press_key": ["key"],
+    "click": ["coordinates"],
+    "click_on_image": ["wait_seconds","image_path"],
+    "sleep":["time"],
+}
 
 class Work():
     def __init__(self, worktype, **kwargs) -> None:
@@ -56,6 +66,7 @@ class Work():
             self.error = e
 
     def run(self):
+        pyautogui.sleep(self.details["start_time"])
         if self.type == 'write':
             self.write()
         elif self.type == 'hotkey':
@@ -64,6 +75,8 @@ class Work():
             self.click()
         elif self.type == 'press_key':
             self.press_key()
+        elif self.type == 'sleep':
+            time.sleep(self.details["time"])
         elif self.type == 'click_on_image':
             self.click_on_image()
 
@@ -85,7 +98,6 @@ class WorkFlow():
         self.works[index].run()
 
     def run(self):
-        pg.countdown(5)
         for work in self.works:
             work.run()
 

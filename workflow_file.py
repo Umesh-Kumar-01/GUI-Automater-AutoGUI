@@ -15,21 +15,28 @@ def save_wkfw_file(filepath, data):
 BASE_TEMPLATE = """
 {
     "cells":[
-        {
-            "type": "markdown",
-            "content": "This is a markdown cell and below will be a task cell."
-        },
-        {
-            "type": "task",
-            "task_type": "write",
-            "task_data":{
-                "interval": 0.2,
-                "text": "Hello World!"
-            }
-        }
     ]
 }
 """
+
+# BASE_TEMPLATE = """
+# {
+#     "cells":[
+#         {
+#             "type": "markdown",
+#             "content": "This is a markdown cell and below will be a task cell."
+#         },
+#         {
+#             "type": "task",
+#             "task_type": "write",
+#             "task_data":{
+#                 "interval": 0.2,
+#                 "text": "Hello World!"
+#             }
+#         }
+#     ]
+# }
+# """
 
 def create_wkfw_file(filepath):
     save_wkfw_file(filepath, json.loads(BASE_TEMPLATE))
