@@ -18,22 +18,22 @@ class TaskCell:
         self.task_label = ttk.Label(self.frame,text="@Task Cell")
         self.task_label.grid(row=0, column=0, sticky="ew")
         self.start_after_label = ttk.Label(self.frame, text="Start Task After (in seconds)", justify="left")
-        self.start_after_label.grid(row=1, column=0, columnspan=2,sticky="w")
+        self.start_after_label.grid(row=1, column=0,sticky="w")
         self.start_after_input = ttk.Entry(self.frame)
         self.start_after_input.insert(0, "0")
-        self.start_after_input.grid(row=1, column=2,columnspan=2,sticky="w")
+        self.start_after_input.grid(row=1, column=1,sticky="w")
 
         self.task_types = list(TASKS.keys())
 
         self.label = ttk.Label(self.frame, text="Select Task Type", justify="left")
-        self.label.grid(row=2, column=0,columnspan=2,sticky="w")
+        self.label.grid(row=2, column=0,sticky="w")
         self.task_type_var = tk.StringVar()
         self.task_type_combobox = ttk.Combobox(self.frame, textvariable=self.task_type_var, values=self.task_types)
-        self.task_type_combobox.grid(row=2, column=2,columnspan=1,sticky="w")
+        self.task_type_combobox.grid(row=2, column=1,sticky="w")
         self.select_button = ttk.Button(self.frame, text="Select Task Type", command=self.show_selected_task)
-        self.select_button.grid(row=2, column=4,columnspan=2,sticky="w")
+        self.select_button.grid(row=2, column=3,sticky="w")
         self.addButton = ttk.Button(self.frame, text="Add New Arguments", command=self.add_new_arg)
-        self.addButton.grid(row=3, column=0,columnspan=2,sticky="w")
+        self.addButton.grid(row=3, column=0,sticky="w")
 
         self.labels = []
 
